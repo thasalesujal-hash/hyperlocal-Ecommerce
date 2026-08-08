@@ -61,6 +61,8 @@ body.dark-mode {
 }
 
 /* ─── Reset ─── */
+html { overflow-x: hidden; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -70,6 +72,7 @@ body {
   font-size: 15px;
   line-height: 1.6;
   transition: background .3s, color .3s;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
@@ -85,6 +88,9 @@ h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
   gap: 16px;
   flex-wrap: wrap;
 }
+
+/* Hide presentation-only demo controls in the normal application shell. */
+.demo-bar { display: none; }
 
 .demo-bar-left,
 .demo-bar-right {
@@ -1146,7 +1152,6 @@ body.low-bw .hero-card { background: var(--c-primary); }
 }
 
 @media (max-width: 600px) {
-  .demo-bar { display: none; }
   .navbar { padding: 0 14px; }
   .hero-card { padding: 24px 18px 20px; }
   .main-layout { padding: 16px 14px 70px; }

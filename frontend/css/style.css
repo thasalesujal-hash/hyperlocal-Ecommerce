@@ -53,6 +53,8 @@ body.dark-mode {
 }
 
 /* Base Setup */
+html { overflow-x: hidden; }
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -67,6 +69,7 @@ body {
   min-height: 100vh;
   padding-bottom: 90px;
   transition: background 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -147,6 +150,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.85rem;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+
+/* Keep demo-only role controls out of the everyday customer interface. */
+.role-banner { display: none; }
 
 .role-pills {
   display: flex;
@@ -313,6 +319,32 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--surface-border);
   box-shadow: var(--shadow-md);
   margin-bottom: 30px;
+}
+
+.hero-search-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.insights-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 700px) {
+  .navbar { padding: 12px 14px; gap: 12px; }
+  .brand { font-size: 1.05rem; gap: 8px; }
+  .brand-logo-icon { width: 34px; height: 34px; }
+  .brand-badge { display: none; }
+  .nav-actions { gap: 6px; }
+  .nav-actions > button:not(.btn-primary) { display: none; }
+  .nav-actions .btn { padding: 8px 10px; }
+  .location-header { padding: 12px 14px; }
+  .location-info { font-size: .8rem; }
+  .location-picker-btn { padding: 7px 10px; font-size: .75rem; }
+  .container { padding: 18px 14px 60px; }
+  .hero-search-card { padding: 22px 18px; }
+  .hero-search-card h1 { font-size: 1.45rem !important; }
 }
 
 .search-box {
