@@ -140,6 +140,9 @@ class OrderOut(BaseModel):
     longitude: float
     payment_method: str
     status: str
+    return_status: str = "NONE"
+    return_reason: Optional[str] = None
+    return_requested_at: Optional[datetime] = None
     created_at: datetime
     shop: Optional[ShopOut] = None
     customer: Optional[UserOut] = None
@@ -190,6 +193,9 @@ class RatingOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ReturnRequestCreate(BaseModel):
+    reason: str
 
 # Insights Schema
 class DemandInsightsOut(BaseModel):

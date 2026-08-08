@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemas
@@ -276,6 +277,24 @@ def update_order_status(db: Session, order_id: int, new_status: str, partner_id:
     if partner_id:
         order.delivery_partner_id = partner_id
         
+    db.commit()
+    db.refresh(order)
+    return order
+
+def request_order_return(db: Session, order_id: int, customer_id: int, reason: str):
+    order = get_order_by_id(db, order_id)
+    if not order or order.customer_id != customer_id:
+        raise ValueError("Order not found or not owned by customer")
+    if order.status != "DELIVERED":
+        raise ValueError("Returns can only be requested for delivered orders")
+    if order.return_status != "NONE":
+        raise ValueError("A return request already exists for this order")
+    if not reason.strip():
+        raise ValueError("Please provide a return reason")
+
+    order.return_status = "REQUESTED"
+    order.return_reason = reason.strip()
+    order.return_requested_at = datetime.utcnow()
     db.commit()
     db.refresh(order)
     return order

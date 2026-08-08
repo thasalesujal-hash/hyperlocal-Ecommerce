@@ -857,7 +857,10 @@ function renderOrderCard(order, viewRole) {
       actionButtons = `<button onclick="updateOrderStatus(${order.id}, 'DELIVERED')" class="btn btn-accent btn-sm">Mark Delivered</button>`;
     }
   } else if (viewRole === "CUSTOMER" && order.status === "DELIVERED") {
-    actionButtons = `<button onclick="openRatingModal(${order.id}, ${order.shop_id})" class="btn btn-outline btn-sm">⭐ Rate Shop & Delivery</button>`;
+    const returnAction = order.return_status === "REQUESTED"
+      ? `<span class="status-badge badge-PLACED">↩ Return requested</span>`
+      : `<button onclick="openReturnModal(${order.id})" class="btn btn-outline btn-sm">↩ Request Return</button>`;
+    actionButtons = `<button onclick="openRatingModal(${order.id}, ${order.shop_id})" class="btn btn-outline btn-sm">⭐ Rate Shop & Delivery</button>${returnAction}`;
   }
 
   const isLiveDelivery = viewRole === "CUSTOMER" && order.delivery_partner_id && ["PICKED_UP", "OUT_FOR_DELIVERY"].includes(order.status);
@@ -1271,6 +1274,40 @@ function openRatingModal(orderId, shopId) {
   document.getElementById("rating-order-id").value = orderId;
   document.getElementById("rating-shop-id").value = shopId;
   openModal("rating-modal");
+}
+
+function openReturnModal(orderId) {
+  document.getElementById("return-order-id").value = orderId;
+  document.getElementById("return-reason-input").value = "";
+  openModal("return-modal");
+}
+
+async function submitReturnRequest() {
+  const orderId = parseInt(document.getElementById("return-order-id").value);
+  const reason = document.getElementById("return-reason-input").value.trim();
+  if (!reason) {
+    alert("Please provide a reason for the return.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/orders/${orderId}/return`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+      body: JSON.stringify({ reason })
+    });
+    if (res.ok) {
+      alert("Your return request has been submitted.");
+      closeModal("return-modal");
+      loadCustomerOrders();
+    } else {
+      const error = await res.json();
+      alert(error.detail || "Unable to submit return request.");
+    }
+  } catch (err) {
+    console.error("Submit return request error:", err);
+    alert("Network error.");
+  }
 }
 
 async function submitRating() {

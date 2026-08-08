@@ -207,6 +207,20 @@ def change_order_status(
         raise HTTPException(status_code=404, detail="Order not found")
     return updated
 
+@app.post("/orders/{order_id}/return", response_model=schemas.OrderOut)
+def request_return(
+    order_id: int,
+    return_data: schemas.ReturnRequestCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role != "CUSTOMER":
+        raise HTTPException(status_code=403, detail="Only customers can request returns")
+    try:
+        return crud.request_order_return(db, order_id, current_user.id, return_data.reason)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 # ----------------------------------------------------
 # DELIVERY PARTNER FLOW

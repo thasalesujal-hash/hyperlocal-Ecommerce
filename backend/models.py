@@ -73,6 +73,9 @@ class Order(Base):
     payment_method = Column(String, nullable=False, default="COD") # COD, ONLINE_DEMO
     status = Column(String, nullable=False, default="PLACED") 
     # PLACED, SHOP_ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED, REJECTED
+    return_status = Column(String, nullable=False, default="NONE") # NONE, REQUESTED, APPROVED, REJECTED
+    return_reason = Column(Text, nullable=True)
+    return_requested_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     customer = relationship("User", foreign_keys=[customer_id], back_populates="orders")

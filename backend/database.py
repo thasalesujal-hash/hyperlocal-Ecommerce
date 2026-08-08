@@ -21,6 +21,15 @@ def ensure_schema():
             if column not in columns:
                 connection.exec_driver_sql(f"ALTER TABLE users ADD COLUMN {column} VARCHAR")
 
+        order_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(orders)")}
+        for column, definition in {
+            "return_status": "VARCHAR NOT NULL DEFAULT 'NONE'",
+            "return_reason": "TEXT",
+            "return_requested_at": "DATETIME"
+        }.items():
+            if column not in order_columns:
+                connection.exec_driver_sql(f"ALTER TABLE orders ADD COLUMN {column} {definition}")
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 

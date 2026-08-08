@@ -462,6 +462,22 @@
     </div>
   </div>
 
+  <!-- Return Request Modal -->
+  <div id="return-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>↩ Request a Return</h3>
+        <button onclick="closeModal('return-modal')" class="close-btn">&times;</button>
+      </div>
+      <input type="hidden" id="return-order-id">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <label style="font-size:0.85rem; font-weight:600;">Why are you returning this order?</label>
+        <textarea id="return-reason-input" class="search-input" style="height:90px;" placeholder="Tell the shop what went wrong..."></textarea>
+        <button onclick="submitReturnRequest()" class="btn btn-primary">Submit Return Request</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/app.js"></script>
 </body>
 </html>
