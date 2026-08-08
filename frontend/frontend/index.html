@@ -61,8 +61,8 @@
       <span>Cart</span>
       <span class="cart-badge" id="cart-count-badge">0</span>
     </button>
-    <div id="auth-status-container">
-      <button onclick="openModal('auth-modal')" class="btn btn-primary btn-sm">Login</button>
+    <div id="auth-status-container" class="auth-nav-action">
+      <button onclick="openModal('auth-modal')" class="btn btn-primary btn-sm">Login / Register</button>
     </div>
   </div>
 </nav>
@@ -107,15 +107,6 @@
     <div id="smart-rec-results"></div>
   </div>
 
-  <!-- Town Map -->
-  <div class="panel" style="margin-bottom:28px;">
-    <div class="panel-header">
-      <h2 class="section-title">🗺️ Town Map — Nearby Shops</h2>
-      <span class="section-sub">Click a pin to see products</span>
-    </div>
-    <div id="shops-leaflet-map" class="leaflet-box"></div>
-  </div>
-
   <!-- Two Column Layout -->
   <div class="two-col">
     <!-- Nearby Shops -->
@@ -141,6 +132,15 @@
       <h2 class="section-title">📦 My Orders & Live Tracking</h2>
     </div>
     <div id="customer-orders-list"></div>
+  </div>
+
+  <!-- Town Map at the bottom of the customer page -->
+  <div class="panel" style="margin-top:28px;">
+    <div class="panel-header">
+      <h2 class="section-title">🗺️ Town Map — Nearby Shops</h2>
+      <span class="section-sub">Click a pin to see products</span>
+    </div>
+    <div id="shops-leaflet-map" class="leaflet-box"></div>
   </div>
 
 </section>
@@ -379,8 +379,24 @@
           <option value="COD">💵 Cash on Delivery (COD)</option>
           <option value="ONLINE_DEMO">💳 Demo UPI / Card Payment</option>
         </select>
+        <div id="online-payment-fields" class="payment-fields" style="display:none;">
+          <label class="form-label">Online Payment Type</label>
+          <select id="online-payment-type" class="form-input form-select">
+            <option value="UPI">UPI</option>
+            <option value="CARD">Debit / Credit Card</option>
+          </select>
+          <input type="text" id="upi-id-input" class="form-input" placeholder="UPI ID (e.g. name@upi)">
+          <div id="card-payment-fields" style="display:none;">
+            <input type="text" id="card-number-input" class="form-input" inputmode="numeric" placeholder="Card number">
+            <div class="form-row" style="margin-top:8px;">
+              <input type="text" id="card-expiry-input" class="form-input" placeholder="MM/YY">
+              <input type="password" id="card-cvv-input" class="form-input" inputmode="numeric" placeholder="CVV">
+            </div>
+          </div>
+          <p class="modal-hint">Demo checkout only. No real payment will be processed.</p>
+        </div>
       </div>
-      <button onclick="placeOrder()" class="btn btn-accent w-full btn-lg">✅ Confirm & Place Order</button>
+      <button id="place-order-btn" onclick="placeOrder()" class="btn btn-accent w-full btn-lg">✅ Confirm & Place Order</button>
     </div>
   </div>
 </div>
@@ -437,15 +453,28 @@
       <label class="form-label">Email</label>
       <input type="email" id="register-email" class="form-input" placeholder="you@example.com">
       <label class="form-label">Phone</label>
-      <input type="tel" id="register-phone" class="form-input" placeholder="Phone number">
+      <input type="tel" id="register-phone" class="form-input" placeholder="Mobile number">
+      <label class="form-label">Address</label>
+      <input type="text" id="register-address" class="form-input" placeholder="Full address / landmark">
       <label class="form-label">Password</label>
       <input type="password" id="register-pass" class="form-input" placeholder="At least 6 characters">
       <label class="form-label">Account Type</label>
-      <select id="register-role" class="form-input form-select">
+      <select id="register-role" class="form-input form-select" onchange="toggleRegistrationRoleFields()">
         <option value="CUSTOMER">Customer</option>
         <option value="SHOPKEEPER">Shopkeeper</option>
         <option value="DELIVERY_PARTNER">Delivery Partner</option>
       </select>
+      <div id="shopkeeper-registration-fields" class="registration-role-fields" style="display:none;">
+        <input type="text" id="register-shop-name" class="form-input" placeholder="Shop name">
+        <input type="text" id="register-shop-category" class="form-input" placeholder="Shop category (e.g. Grocery)">
+      </div>
+      <div id="delivery-registration-fields" class="registration-role-fields" style="display:none;">
+        <select id="register-vehicle-type" class="form-input form-select">
+          <option value="BICYCLE">Bicycle</option>
+          <option value="MOTORBIKE">Motorbike / Scooter</option>
+          <option value="WALKING">Walking</option>
+        </select>
+      </div>
       <button onclick="performRegister()" class="btn btn-primary w-full" style="margin-top:10px;">Create account</button>
       <button onclick="switchAuthMode('login')" class="btn btn-outline w-full">Back to login</button>
     </div>

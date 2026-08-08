@@ -23,7 +23,9 @@ const state = {
   pickerMarker: null,
   routeMap: null,
   routePolyline: null,
-  riderMarker: null
+  riderMarker: null,
+  customerTrackingMaps: {},
+  locationWatchId: null
 };
 
 // DOM Initialization
@@ -115,6 +117,8 @@ function bindEvents() {
   document.getElementById("search-input")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") handleSearch();
   });
+  document.getElementById("checkout-payment")?.addEventListener("change", updatePaymentUI);
+  document.getElementById("online-payment-type")?.addEventListener("change", updatePaymentUI);
 
   // Location Picker
   document.getElementById("location-btn")?.addEventListener("click", openLocationModal);
@@ -181,11 +185,19 @@ async function performRegister() {
   const name = document.getElementById("register-name").value.trim();
   const email = document.getElementById("register-email").value.trim();
   const phone = document.getElementById("register-phone").value.trim();
+  const address = document.getElementById("register-address").value.trim();
   const password = document.getElementById("register-pass").value;
   const role = document.getElementById("register-role").value;
+  const shopName = document.getElementById("register-shop-name").value.trim();
+  const shopCategory = document.getElementById("register-shop-category").value.trim();
+  const vehicleType = document.getElementById("register-vehicle-type").value;
 
-  if (!name || !email || !phone || !password) {
+  if (!name || !email || !phone || !address || !password) {
     alert("Please complete all registration fields.");
+    return;
+  }
+  if (role === "SHOPKEEPER" && (!shopName || !shopCategory)) {
+    alert("Please add your shop name and category.");
     return;
   }
   if (password.length < 6) {
@@ -197,7 +209,7 @@ async function performRegister() {
     const res = await fetch(`${API_BASE}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone, password, role })
+      body: JSON.stringify({ name, email, phone, address, password, role, shop_name: shopName, shop_category: shopCategory, vehicle_type: vehicleType })
     });
     if (!res.ok) {
       const err = await res.json();
@@ -212,7 +224,16 @@ async function performRegister() {
   }
 }
 
+function toggleRegistrationRoleFields() {
+  const role = document.getElementById("register-role")?.value;
+  const shopFields = document.getElementById("shopkeeper-registration-fields");
+  const deliveryFields = document.getElementById("delivery-registration-fields");
+  if (shopFields) shopFields.style.display = role === "SHOPKEEPER" ? "flex" : "none";
+  if (deliveryFields) deliveryFields.style.display = role === "DELIVERY_PARTNER" ? "flex" : "none";
+}
+
 function logout() {
+  stopDeliveryLocationSharing();
   state.token = null;
   state.user = null;
   localStorage.removeItem("token");
@@ -267,6 +288,7 @@ function switchRoleView(role) {
     document.getElementById("delivery-view").style.display = "block";
     loadDeliveryRequests();
     loadDeliveryHistory();
+    startDeliveryLocationSharing();
   } else if (role === "ADMIN") {
     document.getElementById("admin-view").style.display = "block";
     loadAdminDashboard();
@@ -700,6 +722,8 @@ async function placeOrder() {
   const landmark = document.getElementById("checkout-landmark")?.value || state.location.landmark;
   const paymentMethod = document.getElementById("checkout-payment")?.value || "COD";
 
+  if (paymentMethod === "ONLINE_DEMO" && !isDemoPaymentValid()) return;
+
   const payload = {
     shop_id: shopId,
     items: items,
@@ -740,6 +764,40 @@ async function placeOrder() {
   }
 }
 
+function updatePaymentUI() {
+  const isOnline = document.getElementById("checkout-payment")?.value === "ONLINE_DEMO";
+  const paymentFields = document.getElementById("online-payment-fields");
+  const paymentType = document.getElementById("online-payment-type")?.value || "UPI";
+  const cardFields = document.getElementById("card-payment-fields");
+  const upiInput = document.getElementById("upi-id-input");
+  const placeButton = document.getElementById("place-order-btn");
+  if (paymentFields) paymentFields.style.display = isOnline ? "block" : "none";
+  if (cardFields) cardFields.style.display = isOnline && paymentType === "CARD" ? "block" : "none";
+  if (upiInput) upiInput.style.display = isOnline && paymentType === "UPI" ? "block" : "none";
+  if (placeButton) placeButton.textContent = isOnline ? "💳 Pay & Place Order" : "Confirm & Place Order";
+}
+
+function isDemoPaymentValid() {
+  const paymentType = document.getElementById("online-payment-type")?.value || "UPI";
+  if (paymentType === "UPI") {
+    const upiId = document.getElementById("upi-id-input")?.value.trim();
+    if (!upiId || !upiId.includes("@")) {
+      alert("Enter a valid demo UPI ID, such as name@upi.");
+      return false;
+    }
+    return true;
+  }
+
+  const cardNumber = document.getElementById("card-number-input")?.value.replace(/\s/g, "");
+  const expiry = document.getElementById("card-expiry-input")?.value.trim();
+  const cvv = document.getElementById("card-cvv-input")?.value.trim();
+  if (!/^\d{12,19}$/.test(cardNumber) || !/^\d{2}\/\d{2}$/.test(expiry) || !/^\d{3,4}$/.test(cvv)) {
+    alert("Enter valid demo card details.");
+    return false;
+  }
+  return true;
+}
+
 // ----------------------------------------------------
 // ORDER TRACKING & LIFECYCLE
 // ----------------------------------------------------
@@ -761,6 +819,7 @@ async function loadCustomerOrders() {
     }
 
     container.innerHTML = orders.map(order => renderOrderCard(order, "CUSTOMER")).join('');
+    initializeCustomerTracking(orders);
   } catch (err) {
     console.error("Error loading customer orders:", err);
   }
@@ -796,6 +855,14 @@ function renderOrderCard(order, viewRole) {
   } else if (viewRole === "CUSTOMER" && order.status === "DELIVERED") {
     actionButtons = `<button onclick="openRatingModal(${order.id}, ${order.shop_id})" class="btn btn-outline btn-sm">⭐ Rate Shop & Delivery</button>`;
   }
+
+  const isLiveDelivery = viewRole === "CUSTOMER" && order.delivery_partner_id && ["PICKED_UP", "OUT_FOR_DELIVERY"].includes(order.status);
+  const liveTracking = isLiveDelivery ? `
+    <div class="live-delivery-panel">
+      <div class="live-delivery-heading">🚴 Delivery partner location <span class="live-dot">LIVE</span></div>
+      <div id="customer-tracking-${order.id}" class="customer-tracking-map"></div>
+      <div id="customer-tracking-status-${order.id}" class="live-delivery-status">Waiting for the delivery partner's GPS location…</div>
+    </div>` : "";
 
   return `
     <div class="card" style="margin-bottom: 20px;">
@@ -835,8 +902,48 @@ function renderOrderCard(order, viewRole) {
         <strong>Ordered Items:</strong>
         ${order.items.map(i => `<div>• ${i.product ? i.product.name : 'Product'} x${i.quantity} (₹${i.price})</div>`).join('')}
       </div>
+      ${liveTracking}
     </div>
   `;
+}
+
+async function initializeCustomerTracking(orders) {
+  const activeOrders = orders.filter(order => order.delivery_partner_id && ["PICKED_UP", "OUT_FOR_DELIVERY"].includes(order.status));
+  for (const order of activeOrders) {
+    const statusEl = document.getElementById(`customer-tracking-status-${order.id}`);
+    try {
+      const res = await fetch(`${API_BASE}/orders/${order.id}/delivery-location`, {
+        headers: { "Authorization": `Bearer ${state.token}` }
+      });
+      if (!res.ok) {
+        if (statusEl) statusEl.textContent = "Waiting for the delivery partner to share their location…";
+        continue;
+      }
+      const location = await res.json();
+      if (statusEl) statusEl.textContent = `Last updated ${new Date(location.updated_at).toLocaleTimeString()}`;
+      renderCustomerTrackingMap(order, location);
+    } catch (e) {
+      if (statusEl) statusEl.textContent = "Live location is temporarily unavailable.";
+    }
+  }
+}
+
+function renderCustomerTrackingMap(order, location) {
+  if (typeof L === "undefined") return;
+  const mapId = `customer-tracking-${order.id}`;
+  const mapEl = document.getElementById(mapId);
+  if (!mapEl) return;
+  let tracking = state.customerTrackingMaps[order.id];
+  if (!tracking) {
+    const map = L.map(mapId).setView([location.latitude, location.longitude], 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+    tracking = { map, marker: null };
+    state.customerTrackingMaps[order.id] = tracking;
+  }
+  tracking.map.invalidateSize();
+  if (tracking.marker) tracking.map.removeLayer(tracking.marker);
+  tracking.marker = L.marker([location.latitude, location.longitude]).addTo(tracking.map).bindPopup("🚴 Delivery partner").openPopup();
+  tracking.map.setView([location.latitude, location.longitude], 15);
 }
 
 async function updateOrderStatus(orderId, status) {
@@ -998,6 +1105,31 @@ async function editProductStock(prodId, currentStock) {
 // ----------------------------------------------------
 // DELIVERY PARTNER DASHBOARD
 // ----------------------------------------------------
+function startDeliveryLocationSharing() {
+  if (state.locationWatchId || !navigator.geolocation) return;
+  state.locationWatchId = navigator.geolocation.watchPosition(async position => {
+    try {
+      await fetch(`${API_BASE}/delivery/location`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+        body: JSON.stringify({
+          latitude: Number(position.coords.latitude.toFixed(6)),
+          longitude: Number(position.coords.longitude.toFixed(6))
+        })
+      });
+    } catch (err) {
+      console.error("Delivery location update error:", err);
+    }
+  }, err => console.warn("Delivery location unavailable:", err.message), { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 });
+}
+
+function stopDeliveryLocationSharing() {
+  if (state.locationWatchId !== null) {
+    navigator.geolocation.clearWatch(state.locationWatchId);
+    state.locationWatchId = null;
+  }
+}
+
 async function loadDeliveryRequests() {
   if (!state.token || !state.user || state.user.role !== "DELIVERY_PARTNER") return;
   try {

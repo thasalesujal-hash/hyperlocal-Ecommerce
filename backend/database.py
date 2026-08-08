@@ -13,6 +13,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+def ensure_schema():
+    """Apply small additive migrations required by the SQLite MVP database."""
+    with engine.begin() as connection:
+        columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(users)")}
+        for column in ["address", "shop_name", "shop_category", "vehicle_type"]:
+            if column not in columns:
+                connection.exec_driver_sql(f"ALTER TABLE users ADD COLUMN {column} VARCHAR")
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 

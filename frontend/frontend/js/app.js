@@ -53,6 +53,8 @@ function bindEvents() {
   document.getElementById("btn-low-bw")?.addEventListener("click", toggleLowBandwidth);
   document.getElementById("search-btn")?.addEventListener("click", handleSearch);
   document.getElementById("search-input")?.addEventListener("keypress", e => { if (e.key === "Enter") handleSearch(); });
+  document.getElementById("checkout-payment")?.addEventListener("change", updatePaymentUI);
+  document.getElementById("online-payment-type")?.addEventListener("change", updatePaymentUI);
 
   document.querySelectorAll(".demo-login-btn").forEach(btn => {
     btn.addEventListener("click", e => {
@@ -136,11 +138,19 @@ async function performRegister() {
   const name = document.getElementById("register-name").value.trim();
   const email = document.getElementById("register-email").value.trim();
   const phone = document.getElementById("register-phone").value.trim();
+  const address = document.getElementById("register-address").value.trim();
   const password = document.getElementById("register-pass").value;
   const role = document.getElementById("register-role").value;
+  const shopName = document.getElementById("register-shop-name").value.trim();
+  const shopCategory = document.getElementById("register-shop-category").value.trim();
+  const vehicleType = document.getElementById("register-vehicle-type").value;
 
-  if (!name || !email || !phone || !password) {
+  if (!name || !email || !phone || !address || !password) {
     alert("Please complete all registration fields.");
+    return;
+  }
+  if (role === "SHOPKEEPER" && (!shopName || !shopCategory)) {
+    alert("Please add your shop name and category.");
     return;
   }
   if (password.length < 6) {
@@ -152,7 +162,7 @@ async function performRegister() {
     const res = await fetch(`${API_BASE}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone, password, role })
+      body: JSON.stringify({ name, email, phone, address, password, role, shop_name: shopName, shop_category: shopCategory, vehicle_type: vehicleType })
     });
     if (!res.ok) {
       const err = await res.json();
@@ -165,6 +175,14 @@ async function performRegister() {
     console.error(e);
     alert("Network error. Please try again.");
   }
+}
+
+function toggleRegistrationRoleFields() {
+  const role = document.getElementById("register-role")?.value;
+  const shopFields = document.getElementById("shopkeeper-registration-fields");
+  const deliveryFields = document.getElementById("delivery-registration-fields");
+  if (shopFields) shopFields.style.display = role === "SHOPKEEPER" ? "flex" : "none";
+  if (deliveryFields) deliveryFields.style.display = role === "DELIVERY_PARTNER" ? "flex" : "none";
 }
 
 function logout() {
@@ -498,6 +516,7 @@ async function placeOrder() {
   const addr    = document.getElementById("checkout-address")?.value || state.location.address;
   const land    = document.getElementById("checkout-landmark")?.value || state.location.landmark;
   const payment = document.getElementById("checkout-payment")?.value || "COD";
+  if (payment === "ONLINE_DEMO" && !isDemoPaymentValid()) return;
 
   try {
     const res = await fetch(`${API_BASE}/orders`, {
@@ -514,6 +533,39 @@ async function placeOrder() {
     loadCustomerOrders();
     loadPopularProducts();
   } catch (e) { console.error(e); alert("Network error."); }
+}
+
+function updatePaymentUI() {
+  const isOnline = document.getElementById("checkout-payment")?.value === "ONLINE_DEMO";
+  const paymentFields = document.getElementById("online-payment-fields");
+  const paymentType = document.getElementById("online-payment-type")?.value || "UPI";
+  const cardFields = document.getElementById("card-payment-fields");
+  const upiInput = document.getElementById("upi-id-input");
+  const placeButton = document.getElementById("place-order-btn");
+  if (paymentFields) paymentFields.style.display = isOnline ? "flex" : "none";
+  if (cardFields) cardFields.style.display = isOnline && paymentType === "CARD" ? "block" : "none";
+  if (upiInput) upiInput.style.display = isOnline && paymentType === "UPI" ? "block" : "none";
+  if (placeButton) placeButton.textContent = isOnline ? "💳 Pay & Place Order" : "✅ Confirm & Place Order";
+}
+
+function isDemoPaymentValid() {
+  const paymentType = document.getElementById("online-payment-type")?.value || "UPI";
+  if (paymentType === "UPI") {
+    const upiId = document.getElementById("upi-id-input")?.value.trim();
+    if (!upiId || !upiId.includes("@")) {
+      alert("Enter a valid demo UPI ID, such as name@upi.");
+      return false;
+    }
+    return true;
+  }
+  const cardNumber = document.getElementById("card-number-input")?.value.replace(/\s/g, "");
+  const expiry = document.getElementById("card-expiry-input")?.value.trim();
+  const cvv = document.getElementById("card-cvv-input")?.value.trim();
+  if (!/^\d{12,19}$/.test(cardNumber) || !/^\d{2}\/\d{2}$/.test(expiry) || !/^\d{3,4}$/.test(cvv)) {
+    alert("Enter valid demo card details.");
+    return false;
+  }
+  return true;
 }
 
 // ──────────────────────────────────────────────

@@ -290,6 +290,16 @@ body.dark-mode .navbar {
   font-family: 'Outfit', sans-serif;
 }
 
+.auth-nav-action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.auth-nav-action .btn {
+  white-space: nowrap;
+}
+
 .cart-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--c-primary-glow); }
 
 .cart-badge {
@@ -1001,6 +1011,12 @@ body.dark-mode .badge-REJECTED        { background: rgba(248,113,113,.15); color
 }
 
 .auth-form .btn { margin: 0; }
+
+.registration-role-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 /* ─── FORM ELEMENTS ─── */
 .form-label {

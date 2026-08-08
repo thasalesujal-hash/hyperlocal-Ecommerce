@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
 
-from database import engine, Base, SessionLocal, seed_demo_data
+from database import engine, Base, SessionLocal, seed_demo_data, ensure_schema
 import models, schemas, crud, auth
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+ensure_schema()
 
 # Initialize seed data
 db_session = SessionLocal()
@@ -243,6 +244,38 @@ def get_delivery_history(
     db: Session = Depends(auth.get_db)
 ):
     return crud.get_partner_deliveries(db, partner_id=current_user.id)
+
+@app.put("/delivery/location", response_model=schemas.DeliveryLocationOut)
+def update_delivery_location(
+    location: schemas.DeliveryLocationUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role != "DELIVERY_PARTNER":
+        raise HTTPException(status_code=403, detail="Only delivery partners can share location")
+    if not (-90 <= location.latitude <= 90 and -180 <= location.longitude <= 180):
+        raise HTTPException(status_code=400, detail="Invalid coordinates")
+    return crud.save_delivery_location(db, current_user.id, location)
+
+@app.get("/orders/{order_id}/delivery-location", response_model=schemas.DeliveryLocationOut)
+def get_order_delivery_location(
+    order_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    order = crud.get_order_by_id(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if current_user.role == "CUSTOMER" and order.customer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You cannot view this delivery")
+    if current_user.role == "DELIVERY_PARTNER" and order.delivery_partner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not assigned to this delivery")
+    if not order.delivery_partner_id:
+        raise HTTPException(status_code=404, detail="Delivery partner not assigned")
+    location = crud.get_delivery_location(db, order.delivery_partner_id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Delivery partner location not available")
+    return location
 
 
 # ----------------------------------------------------

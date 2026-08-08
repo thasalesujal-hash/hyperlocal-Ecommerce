@@ -10,6 +10,10 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, nullable=False)
+    address = Column(String, nullable=True)
+    shop_name = Column(String, nullable=True)
+    shop_category = Column(String, nullable=True)
+    vehicle_type = Column(String, nullable=True)
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False, default="CUSTOMER") # CUSTOMER, SHOPKEEPER, DELIVERY_PARTNER, ADMIN
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -76,6 +80,17 @@ class Order(Base):
     delivery_partner = relationship("User", foreign_keys=[delivery_partner_id], back_populates="deliveries")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     rating = relationship("Rating", back_populates="order", uselist=False)
+
+class DeliveryLocation(Base):
+    __tablename__ = "delivery_locations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    partner_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    partner = relationship("User")
 
 class OrderItem(Base):
     __tablename__ = "order_items"

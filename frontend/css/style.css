@@ -124,6 +124,16 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
+.auth-nav-action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.auth-nav-action .btn {
+  white-space: nowrap;
+}
+
 /* Quick Role Banner */
 .role-banner {
   background: #020617;
@@ -579,6 +589,44 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 20px;
 }
 
+.live-delivery-panel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
+}
+
+.live-delivery-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.live-dot {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.customer-tracking-map {
+  height: 220px;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.live-delivery-status {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 .close-btn {
   background: none;
   border: none;
@@ -607,6 +655,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .auth-form .btn { margin: 0; }
+
+.registration-role-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
 /* Animations */
 @keyframes fadeIn {

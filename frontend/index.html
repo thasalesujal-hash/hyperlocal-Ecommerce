@@ -49,7 +49,9 @@
       <button onclick="openCartModal()" class="btn btn-primary btn-sm">
         🛒 Cart (<span id="cart-count-badge">0</span>)
       </button>
-      <div id="auth-status-container"></div>
+      <div id="auth-status-container" class="auth-nav-action">
+        <button onclick="openModal('auth-modal')" class="btn btn-primary btn-sm">Login / Register</button>
+      </div>
     </div>
   </header>
 
@@ -100,15 +102,6 @@
         <div id="smart-rec-results"></div>
       </div>
 
-      <!-- Interactive Leaflet Town Map -->
-      <div class="insights-card" style="margin-bottom: 30px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <h3 class="section-title" style="margin:0;">🗺️ Interactive Town Map & Nearby Shops</h3>
-          <span style="font-size:0.8rem; color:var(--gray-600); font-weight:600;">Click any shop marker to view products</span>
-        </div>
-        <div id="shops-leaflet-map" style="height: 320px; width:100%; border-radius:12px; border:1px solid var(--gray-200);"></div>
-      </div>
-
       <!-- Nearby Shops -->
       <div style="margin-bottom: 30px;">
         <h3 class="section-title">🏪 Nearby Shops in Town</h3>
@@ -125,6 +118,15 @@
       <div>
         <h3 class="section-title">📦 Your Orders & Status Tracker</h3>
         <div id="customer-orders-list"></div>
+      </div>
+
+      <!-- Town Map at the bottom of the customer page -->
+      <div class="insights-card" style="margin-top:30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 class="section-title" style="margin:0;">🗺️ Interactive Town Map & Nearby Shops</h3>
+          <span style="font-size:0.8rem; color:var(--gray-600); font-weight:600;">Click any shop marker to view products</span>
+        </div>
+        <div id="shops-leaflet-map" style="height: 320px; width:100%; border-radius:12px; border:1px solid var(--gray-200);"></div>
       </div>
 
     </section>
@@ -350,9 +352,25 @@
           <option value="COD">💵 Cash on Delivery (COD)</option>
           <option value="ONLINE_DEMO">💳 Demo Online Payment (UPI/Card)</option>
         </select>
+        <div id="online-payment-fields" class="payment-fields" style="display:none;">
+          <label style="font-size:0.85rem; font-weight:700;">Online Payment Type:</label>
+          <select id="online-payment-type" class="search-input" style="width:100%;">
+            <option value="UPI">UPI</option>
+            <option value="CARD">Debit / Credit Card</option>
+          </select>
+          <input type="text" id="upi-id-input" class="search-input" style="width:100%;" placeholder="UPI ID (e.g. name@upi)">
+          <div id="card-payment-fields" style="display:none;">
+            <input type="text" id="card-number-input" class="search-input" style="width:100%; margin-bottom:8px;" inputmode="numeric" placeholder="Card number">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="card-expiry-input" class="search-input" style="width:50%;" placeholder="MM/YY">
+              <input type="password" id="card-cvv-input" class="search-input" style="width:50%;" inputmode="numeric" placeholder="CVV">
+            </div>
+          </div>
+          <p style="font-size:0.75rem; color:var(--gray-600);">Demo checkout only. No real payment will be processed.</p>
+        </div>
       </div>
 
-      <button onclick="placeOrder()" class="btn btn-accent" style="width:100%; padding:12px;">Confirm & Place Order</button>
+      <button id="place-order-btn" onclick="placeOrder()" class="btn btn-accent" style="width:100%; padding:12px;">Confirm & Place Order</button>
     </div>
   </div>
 
@@ -392,13 +410,25 @@
         <p style="font-size:0.85rem; color:var(--gray-600);">Join your local commerce network in a few seconds.</p>
         <input type="text" id="register-name" class="search-input" placeholder="Full name">
         <input type="email" id="register-email" class="search-input" placeholder="Email address">
-        <input type="tel" id="register-phone" class="search-input" placeholder="Phone number">
+        <input type="tel" id="register-phone" class="search-input" placeholder="Mobile number">
+        <input type="text" id="register-address" class="search-input" placeholder="Full address / landmark">
         <input type="password" id="register-pass" class="search-input" placeholder="Create password">
-        <select id="register-role" class="search-input">
+        <select id="register-role" class="search-input" onchange="toggleRegistrationRoleFields()">
           <option value="CUSTOMER">Customer</option>
           <option value="SHOPKEEPER">Shopkeeper</option>
           <option value="DELIVERY_PARTNER">Delivery Partner</option>
         </select>
+        <div id="shopkeeper-registration-fields" class="registration-role-fields" style="display:none;">
+          <input type="text" id="register-shop-name" class="search-input" placeholder="Shop name">
+          <input type="text" id="register-shop-category" class="search-input" placeholder="Shop category (e.g. Grocery)">
+        </div>
+        <div id="delivery-registration-fields" class="registration-role-fields" style="display:none;">
+          <select id="register-vehicle-type" class="search-input">
+            <option value="BICYCLE">Bicycle</option>
+            <option value="MOTORBIKE">Motorbike / Scooter</option>
+            <option value="WALKING">Walking</option>
+          </select>
+        </div>
         <button onclick="performRegister()" class="btn btn-primary">Create account</button>
         <button onclick="switchAuthMode('login')" class="btn btn-outline">Back to login</button>
       </div>

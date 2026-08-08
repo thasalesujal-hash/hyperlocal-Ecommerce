@@ -7,6 +7,10 @@ class UserRegister(BaseModel):
     name: str
     email: str
     phone: str
+    address: Optional[str] = None
+    shop_name: Optional[str] = None
+    shop_category: Optional[str] = None
+    vehicle_type: Optional[str] = None
     password: str
     role: str = "CUSTOMER" # CUSTOMER, SHOPKEEPER, DELIVERY_PARTNER, ADMIN
 
@@ -19,6 +23,10 @@ class UserOut(BaseModel):
     name: str
     email: str
     phone: str
+    address: Optional[str] = None
+    shop_name: Optional[str] = None
+    shop_category: Optional[str] = None
+    vehicle_type: Optional[str] = None
     role: str
     created_at: datetime
 
@@ -137,6 +145,19 @@ class OrderOut(BaseModel):
     customer: Optional[UserOut] = None
     delivery_partner: Optional[UserOut] = None
     items: List[OrderItemOut] = []
+
+    class Config:
+        from_attributes = True
+
+class DeliveryLocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+
+class DeliveryLocationOut(BaseModel):
+    partner_id: int
+    latitude: float
+    longitude: float
+    updated_at: datetime
 
     class Config:
         from_attributes = True

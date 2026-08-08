@@ -95,6 +95,10 @@ def create_user(db: Session, user: schemas.UserRegister):
         name=user.name,
         email=user.email.lower().strip(),
         phone=user.phone,
+        address=user.address,
+        shop_name=user.shop_name,
+        shop_category=user.shop_category,
+        vehicle_type=user.vehicle_type,
         password_hash=hashed_pwd,
         role=user.role.upper()
     )
@@ -285,6 +289,25 @@ def get_available_delivery_requests(db: Session):
 
 def get_partner_deliveries(db: Session, partner_id: int):
     return db.query(models.Order).filter(models.Order.delivery_partner_id == partner_id).order_by(models.Order.created_at.desc()).all()
+
+def save_delivery_location(db: Session, partner_id: int, location: schemas.DeliveryLocationUpdate):
+    current = db.query(models.DeliveryLocation).filter(models.DeliveryLocation.partner_id == partner_id).first()
+    if current:
+        current.latitude = location.latitude
+        current.longitude = location.longitude
+    else:
+        current = models.DeliveryLocation(
+            partner_id=partner_id,
+            latitude=location.latitude,
+            longitude=location.longitude
+        )
+        db.add(current)
+    db.commit()
+    db.refresh(current)
+    return current
+
+def get_delivery_location(db: Session, partner_id: int):
+    return db.query(models.DeliveryLocation).filter(models.DeliveryLocation.partner_id == partner_id).first()
 
 def create_rating(db: Session, customer_id: int, rating_data: schemas.RatingCreate):
     order = get_order_by_id(db, rating_data.order_id)
