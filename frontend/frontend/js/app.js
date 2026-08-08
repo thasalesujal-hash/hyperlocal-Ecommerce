@@ -436,11 +436,17 @@ function renderProductCards(products, containerId) {
 async function filterShopProducts(shopId, shopName) {
   try {
     const res  = await fetch(`${API_BASE}/products?shop_id=${shopId}`);
+    if (!res.ok) throw new Error(`Product request failed with ${res.status}`);
     const data = await res.json();
     const title = document.getElementById("popular-products-title");
     if (title) title.textContent = `Products at ${shopName}`;
     renderProductCards(data, "popular-products-grid");
-  } catch (e) { console.error(e); }
+    document.getElementById("popular-products-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e) {
+    console.error("Filter shop error:", e);
+    const container = document.getElementById("popular-products-grid");
+    if (container) container.innerHTML = `<p style="color:var(--c-danger);">Unable to load this shop's products. Please try again.</p>`;
+  }
 }
 
 // ──────────────────────────────────────────────
