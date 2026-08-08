@@ -170,6 +170,48 @@ async function performLogin(email, password) {
   }
 }
 
+function switchAuthMode(mode) {
+  const isRegistering = mode === "register";
+  document.getElementById("login-form").style.display = isRegistering ? "none" : "flex";
+  document.getElementById("register-form").style.display = isRegistering ? "flex" : "none";
+  document.getElementById("auth-modal-title").textContent = isRegistering ? "📝 Create Account" : "👤 Login";
+}
+
+async function performRegister() {
+  const name = document.getElementById("register-name").value.trim();
+  const email = document.getElementById("register-email").value.trim();
+  const phone = document.getElementById("register-phone").value.trim();
+  const password = document.getElementById("register-pass").value;
+  const role = document.getElementById("register-role").value;
+
+  if (!name || !email || !phone || !password) {
+    alert("Please complete all registration fields.");
+    return;
+  }
+  if (password.length < 6) {
+    alert("Password must be at least 6 characters.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, phone, password, role })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(`Registration failed: ${err.detail || "Unable to create account"}`);
+      return;
+    }
+    alert("Account created successfully. Logging you in now.");
+    await performLogin(email, password);
+  } catch (e) {
+    console.error(e);
+    alert("Network error. Please try again.");
+  }
+}
+
 function logout() {
   state.token = null;
   state.user = null;

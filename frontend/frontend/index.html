@@ -418,16 +418,36 @@
 <div id="auth-modal" class="overlay" style="display:none;">
   <div class="modal-box modal-sm">
     <div class="modal-head">
-      <h3>👤 Login</h3>
+      <h3 id="auth-modal-title">👤 Login</h3>
       <button class="close-x" onclick="closeModal('auth-modal')">✕</button>
     </div>
-    <div class="modal-body">
+    <div id="login-form" class="modal-body auth-form">
       <p class="modal-hint">Or use Quick Demo Login buttons at the top bar</p>
       <label class="form-label">Email</label>
       <input type="email" id="login-email" class="form-input" placeholder="customer@town.com">
       <label class="form-label">Password</label>
       <input type="password" id="login-pass" class="form-input" placeholder="password123">
       <button onclick="performLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" class="btn btn-primary w-full" style="margin-top:10px;">Login</button>
+      <button onclick="switchAuthMode('register')" class="btn btn-outline w-full">Create a new account</button>
+    </div>
+    <div id="register-form" class="modal-body auth-form" style="display:none;">
+      <p class="modal-hint">Join your local commerce network in a few seconds.</p>
+      <label class="form-label">Full Name</label>
+      <input type="text" id="register-name" class="form-input" placeholder="Your full name">
+      <label class="form-label">Email</label>
+      <input type="email" id="register-email" class="form-input" placeholder="you@example.com">
+      <label class="form-label">Phone</label>
+      <input type="tel" id="register-phone" class="form-input" placeholder="Phone number">
+      <label class="form-label">Password</label>
+      <input type="password" id="register-pass" class="form-input" placeholder="At least 6 characters">
+      <label class="form-label">Account Type</label>
+      <select id="register-role" class="form-input form-select">
+        <option value="CUSTOMER">Customer</option>
+        <option value="SHOPKEEPER">Shopkeeper</option>
+        <option value="DELIVERY_PARTNER">Delivery Partner</option>
+      </select>
+      <button onclick="performRegister()" class="btn btn-primary w-full" style="margin-top:10px;">Create account</button>
+      <button onclick="switchAuthMode('login')" class="btn btn-outline w-full">Back to login</button>
     </div>
   </div>
 </div>

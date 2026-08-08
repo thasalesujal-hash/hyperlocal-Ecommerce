@@ -378,14 +378,29 @@
   <div id="auth-modal" class="modal-overlay" style="display: none;">
     <div class="modal">
       <div class="modal-header">
-        <h3>👤 Login / Register</h3>
+        <h3 id="auth-modal-title">👤 Login</h3>
         <button onclick="closeModal('auth-modal')" class="close-btn">&times;</button>
       </div>
-      <div style="display:flex; flex-direction:column; gap:10px;">
+      <div id="login-form" class="auth-form">
         <p style="font-size:0.85rem; color:var(--gray-600);">Use standard login or 1-Click Quick Demo Login buttons at top banner.</p>
         <input type="email" id="login-email" class="search-input" placeholder="Email (e.g. customer@town.com)">
         <input type="password" id="login-pass" class="search-input" placeholder="Password">
         <button onclick="performLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" class="btn btn-primary">Login</button>
+        <button onclick="switchAuthMode('register')" class="btn btn-outline">Create a new account</button>
+      </div>
+      <div id="register-form" class="auth-form" style="display:none;">
+        <p style="font-size:0.85rem; color:var(--gray-600);">Join your local commerce network in a few seconds.</p>
+        <input type="text" id="register-name" class="search-input" placeholder="Full name">
+        <input type="email" id="register-email" class="search-input" placeholder="Email address">
+        <input type="tel" id="register-phone" class="search-input" placeholder="Phone number">
+        <input type="password" id="register-pass" class="search-input" placeholder="Create password">
+        <select id="register-role" class="search-input">
+          <option value="CUSTOMER">Customer</option>
+          <option value="SHOPKEEPER">Shopkeeper</option>
+          <option value="DELIVERY_PARTNER">Delivery Partner</option>
+        </select>
+        <button onclick="performRegister()" class="btn btn-primary">Create account</button>
+        <button onclick="switchAuthMode('login')" class="btn btn-outline">Back to login</button>
       </div>
     </div>
   </div>

@@ -989,6 +989,19 @@ body.dark-mode .badge-REJECTED        { background: rgba(248,113,113,.15); color
 
 .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
 
+.auth-form {
+  gap: 14px;
+}
+
+.auth-form > * { width: 100%; }
+
+.auth-form .form-input,
+.auth-form .btn {
+  min-height: 44px;
+}
+
+.auth-form .btn { margin: 0; }
+
 /* ─── FORM ELEMENTS ─── */
 .form-label {
   display: block;

@@ -587,6 +587,27 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-muted);
 }
 
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 28px 28px;
+}
+
+.auth-form > * { width: 100%; }
+
+.auth-form p {
+  margin: 0 0 2px;
+  line-height: 1.5;
+}
+
+.auth-form .search-input,
+.auth-form .btn {
+  min-height: 48px;
+}
+
+.auth-form .btn { margin: 0; }
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
