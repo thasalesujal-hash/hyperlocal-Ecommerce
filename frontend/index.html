@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperlocal Commerce & Delivery Platform - Underserved Towns</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Leaflet OpenStreetMap CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <!-- Top Role Switcher & Quick Demo Bar -->
+  <div class="role-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <strong>🚀 Hackathon Demo Role:</strong>
+      <div class="role-pills">
+        <span class="role-pill active" data-role="CUSTOMER">🛒 Customer</span>
+        <span class="role-pill" data-role="SHOPKEEPER">🏪 Shopkeeper</span>
+        <span class="role-pill" data-role="DELIVERY_PARTNER">🚴 Delivery Partner</span>
+        <span class="role-pill" data-role="ADMIN">🛡️ Admin</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <small style="opacity:0.8;">Quick Demo Login:</small>
+      <button class="btn btn-sm btn-outline demo-login-btn" style="color:white; border-color:rgba(255,255,255,0.4);" data-email="customer@town.com">Customer</button>
+      <button class="btn btn-sm btn-outline demo-login-btn" style="color:white; border-color:rgba(255,255,255,0.4);" data-email="grocer@town.com">Shopkeeper</button>
+      <button class="btn btn-sm btn-outline demo-login-btn" style="color:white; border-color:rgba(255,255,255,0.4);" data-email="rider@town.com">Delivery Partner</button>
+      <button class="btn btn-sm btn-outline demo-login-btn" style="color:white; border-color:rgba(255,255,255,0.4);" data-email="admin@town.com" data-pass="admin123">Admin</button>
+    </div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand">
+      <div class="brand-logo-icon">📍</div>
+      <div>
+        Hyperlocal Connect
+        <span class="brand-badge">Small Towns MVP</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="btn btn-outline btn-sm">🌙 Dark Mode</button>
+      <button id="btn-low-bw" class="btn btn-outline btn-sm">📶 Low-Bandwidth</button>
+      <button onclick="openCartModal()" class="btn btn-primary btn-sm">
+        🛒 Cart (<span id="cart-count-badge">0</span>)
+      </button>
+      <div id="auth-status-container"></div>
+    </div>
+  </header>
+
+  <!-- Location Header Bar -->
+  <div class="location-header">
+    <div class="location-info">
+      <span id="current-location-text">📍 Town Main Chowk <small>(Near Ganesh Temple, opposite City School)</small></span>
+    </div>
+    <button id="location-btn" class="location-picker-btn">📍 Set GPS / Landmark</button>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="container">
+
+    <!-- ================================================== -->
+    <!-- CUSTOMER VIEW                                      -->
+    <!-- ================================================== -->
+    <section id="customer-view" class="role-view-section">
+      
+      <!-- Hero Banner & Search Box -->
+      <div class="hero-search-card">
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+          🛒 Hyperlocal Commerce for Underserved Towns
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Connecting small town customers with local shopkeepers & delivery partners in minutes.
+        </p>
+
+        <!-- Category Filter Chips -->
+        <div class="category-bar" style="margin-top:15px;">
+          <span class="category-chip active" onclick="filterCategory('ALL')">✨ All Products</span>
+          <span class="category-chip" onclick="filterCategory('Grocery')">🌾 Grocery & Staples</span>
+          <span class="category-chip" onclick="filterCategory('Medical')">💊 Medicines</span>
+          <span class="category-chip" onclick="filterCategory('Dairy')">🥛 Dairy & Butter</span>
+          <span class="category-chip" onclick="filterCategory('Stationery')">📚 Books & Stationery</span>
+          <span class="category-chip" onclick="filterCategory('Vegetables')">🥔 Fresh Vegetables</span>
+        </div>
+
+        <div class="search-box">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Search products or nearby stores (e.g. Rice, Wheat, Milk, Paracetamol)...">
+          <button id="search-btn" class="btn btn-primary">Search</button>
+        </div>
+      </div>
+
+      <!-- Smart Recommendation Section -->
+      <div id="smart-rec-section" class="smart-rec-container" style="display: none;">
+        <h3 class="section-title">💡 Smart Nearby Shop Recommendation</h3>
+        <div id="smart-rec-results"></div>
+      </div>
+
+      <!-- Interactive Leaflet Town Map -->
+      <div class="insights-card" style="margin-bottom: 30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 class="section-title" style="margin:0;">🗺️ Interactive Town Map & Nearby Shops</h3>
+          <span style="font-size:0.8rem; color:var(--gray-600); font-weight:600;">Click any shop marker to view products</span>
+        </div>
+        <div id="shops-leaflet-map" style="height: 320px; width:100%; border-radius:12px; border:1px solid var(--gray-200);"></div>
+      </div>
+
+      <!-- Nearby Shops -->
+      <div style="margin-bottom: 30px;">
+        <h3 class="section-title">🏪 Nearby Shops in Town</h3>
+        <div id="nearby-shops-grid" class="grid"></div>
+      </div>
+
+      <!-- Popular Products -->
+      <div style="margin-bottom: 30px;">
+        <h3 id="popular-products-title" class="section-title">🌾 Popular Essential Products</h3>
+        <div id="popular-products-grid" class="grid"></div>
+      </div>
+
+      <!-- Active Orders Tracking -->
+      <div>
+        <h3 class="section-title">📦 Your Orders & Status Tracker</h3>
+        <div id="customer-orders-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ================================================== -->
+    <!-- SHOPKEEPER VIEW                                    -->
+    <!-- ================================================== -->
+    <section id="shopkeeper-view" class="role-view-section" style="display: none;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+        <h2 class="section-title" style="margin:0;">🏪 Shopkeeper Dashboard</h2>
+        <button onclick="openModal('add-product-modal')" class="btn btn-primary">+ Add New Product</button>
+      </div>
+
+      <!-- Shop Demand Insights Analytics Card -->
+      <div class="insights-card">
+        <h3 class="section-title" style="margin-bottom:12px;">📊 Shop Demand Insights & Analytics</h3>
+        <div id="insight-demand-trend" class="trend-banner">
+          Analyzing local order trends...
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+          <div style="background:var(--gray-100); padding:15px; border-radius:10px;">
+            <div style="font-size:0.85rem; color:var(--gray-600);">Total Shop Orders</div>
+            <div id="insight-total-orders" style="font-size:1.5rem; font-weight:800; color:var(--primary);">0</div>
+          </div>
+          <div style="background:var(--gray-100); padding:15px; border-radius:10px;">
+            <div style="font-size:0.85rem; color:var(--gray-600);">Total Sales Revenue</div>
+            <div id="insight-total-revenue" style="font-size:1.5rem; font-weight:800; color:var(--accent-hover);">₹0</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 style="font-size:0.9rem; margin-bottom:6px;">Low Stock Alerts (< 10 units):</h4>
+          <div id="insight-low-stock-list"></div>
+        </div>
+      </div>
+
+      <!-- Incoming Orders -->
+      <div style="margin-bottom: 30px;">
+        <h3 class="section-title">🔔 Incoming Orders</h3>
+        <div id="shopkeeper-orders-list"></div>
+      </div>
+
+      <!-- Manage Inventory -->
+      <div>
+        <h3 class="section-title">📦 Inventory & Products</h3>
+        <div id="shopkeeper-products-list" class="grid"></div>
+      </div>
+
+    </section>
+
+    <!-- ================================================== -->
+    <!-- DELIVERY PARTNER VIEW                              -->
+    <!-- ================================================== -->
+    <section id="delivery-view" class="role-view-section" style="display: none;">
+      
+      <div class="trend-banner" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: var(--accent);">
+        🤝 <strong>Local Employment Feature:</strong> Register as a local delivery partner in your town to deliver orders and earn ₹40 per delivery!
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+        <h2 class="section-title" style="margin:0;">🚴 Delivery Partner Hub</h2>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:0.9rem;">Duty Status:</span>
+          <button class="btn btn-accent btn-sm">🟢 Online</button>
+        </div>
+      </div>
+
+      <!-- Earnings Card -->
+      <div class="insights-card" style="display:flex; justify-content:space-around; align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Completed Deliveries</div>
+          <div id="rider-deliveries-count" style="font-size:1.8rem; font-weight:800; color:var(--primary);">0</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Total Earnings</div>
+          <div id="rider-earnings-total" style="font-size:1.8rem; font-weight:800; color:var(--accent-hover);">₹0</div>
+        </div>
+      </div>
+
+      <!-- Live Route Map -->
+      <div class="insights-card" style="margin-bottom: 25px;">
+        <h3 class="section-title" style="margin-bottom:10px;">🗺️ Live Delivery Route & GPS Navigation</h3>
+        <div id="route-leaflet-map" style="height: 280px; width:100%; border-radius:12px; border:1px solid var(--gray-200);"></div>
+      </div>
+
+      <!-- Available Requests -->
+      <div style="margin-bottom: 30px;">
+        <h3 class="section-title">📍 Nearby Delivery Requests Available</h3>
+        <div id="delivery-requests-list"></div>
+      </div>
+
+      <!-- Delivery History & Active Runs -->
+      <div>
+        <h3 class="section-title">📜 Active Runs & Delivery History</h3>
+        <div id="delivery-history-list"></div>
+      </div>
+
+    </section>
+
+    <!-- ================================================== -->
+    <!-- ADMIN VIEW                                         -->
+    <!-- ================================================== -->
+    <section id="admin-view" class="role-view-section" style="display: none;">
+      
+      <h2 class="section-title">🛡️ Admin Portal</h2>
+
+      <!-- Metrics -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div class="insights-card" style="margin:0;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Total Users</div>
+          <div id="admin-total-users" style="font-size:1.6rem; font-weight:800;">0</div>
+        </div>
+        <div class="insights-card" style="margin:0;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Total Shops</div>
+          <div id="admin-total-shops" style="font-size:1.6rem; font-weight:800;">0</div>
+        </div>
+        <div class="insights-card" style="margin:0;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Total Orders</div>
+          <div id="admin-total-orders" style="font-size:1.6rem; font-weight:800;">0</div>
+        </div>
+        <div class="insights-card" style="margin:0;">
+          <div style="font-size:0.85rem; color:var(--gray-600);">Gross GMV Sales</div>
+          <div id="admin-total-sales" style="font-size:1.6rem; font-weight:800; color:var(--accent-hover);">₹0</div>
+        </div>
+      </div>
+
+      <!-- Verify Shops Table -->
+      <div class="insights-card">
+        <h3 class="section-title" style="font-size:1.05rem;">🏪 Manage & Verify Town Shops</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+          <thead>
+            <tr style="text-align:left; border-bottom:2px solid var(--gray-200);">
+              <th style="padding:8px;">ID</th>
+              <th style="padding:8px;">Shop Name</th>
+              <th style="padding:8px;">Category</th>
+              <th style="padding:8px;">Landmark Location</th>
+              <th style="padding:8px;">Status</th>
+              <th style="padding:8px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-shops-table"></tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ================================================== -->
+  <!-- MODALS                                             -->
+  <!-- ================================================== -->
+
+  <!-- Location Picker Modal -->
+  <div id="location-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📍 Set Your Location</h3>
+        <button onclick="closeModal('location-modal')" class="close-btn">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button onclick="useBrowserGPS()" class="btn btn-accent" style="width:100%;">🛰️ Use Live GPS Geolocation</button>
+        
+        <div style="text-align:center; font-size:0.85rem; color:var(--gray-600); margin: 5px 0;">— OR CLICK ON MAP / ENTER LANDMARK —</div>
+
+        <!-- Interactive Map Picker -->
+        <div>
+          <label style="font-size:0.85rem; font-weight:600;">Click Map to Set Location Pin:</label>
+          <div id="picker-leaflet-map" style="height: 180px; width:100%; border-radius:8px; border:1px solid var(--gray-200); margin-top:4px;"></div>
+        </div>
+
+        <div>
+          <label style="font-size:0.85rem; font-weight:600;">Town Address:</label>
+          <input type="text" id="loc-address-input" class="search-input" value="Town Main Market Chowk" style="width:100%; margin-top:4px;">
+        </div>
+
+        <div>
+          <label style="font-size:0.85rem; font-weight:600;">Landmark (Special Hackathon Feature):</label>
+          <input type="text" id="loc-landmark-input" class="search-input" value="Near Ganesh Temple, opposite City School" style="width:100%; margin-top:4px;">
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:0.8rem;">Latitude:</label>
+            <input type="number" step="0.0001" id="loc-lat-input" class="search-input" value="18.5204" style="width:100%;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.8rem;">Longitude:</label>
+            <input type="number" step="0.0001" id="loc-lng-input" class="search-input" value="73.8567" style="width:100%;">
+          </div>
+        </div>
+
+        <button onclick="saveManualLocation()" class="btn btn-primary" style="margin-top:10px;">Save Location</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart & Checkout Modal -->
+  <div id="cart-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🛒 Your Shopping Cart</h3>
+        <button onclick="closeModal('cart-modal')" class="close-btn">&times;</button>
+      </div>
+      
+      <div id="cart-items-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px;"></div>
+
+      <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; margin-bottom:15px;">
+        <span>Total Amount:</span>
+        <span style="color:var(--accent-hover);">₹<span id="cart-total-price">0</span></span>
+      </div>
+
+      <div style="border-top:1px solid var(--gray-200); padding-top:12px; margin-bottom:15px;">
+        <label style="font-size:0.85rem; font-weight:700;">Landmark Delivery Address:</label>
+        <input type="text" id="checkout-address" class="search-input" style="width:100%; margin-top:4px;" placeholder="Full Address">
+        
+        <input type="text" id="checkout-landmark" class="search-input" style="width:100%; margin-top:8px;" placeholder="Landmark (e.g. Near Temple)">
+
+        <label style="font-size:0.85rem; font-weight:700; margin-top:10px; display:block;">Select Payment Method:</label>
+        <select id="checkout-payment" class="search-input" style="width:100%; margin-top:4px;">
+          <option value="COD">💵 Cash on Delivery (COD)</option>
+          <option value="ONLINE_DEMO">💳 Demo Online Payment (UPI/Card)</option>
+        </select>
+      </div>
+
+      <button onclick="placeOrder()" class="btn btn-accent" style="width:100%; padding:12px;">Confirm & Place Order</button>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="add-product-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📦 Add Product to Shop Inventory</h3>
+        <button onclick="closeModal('add-product-modal')" class="close-btn">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="prod-name-input" class="search-input" placeholder="Product Name (e.g. Sugar 1kg)">
+        <input type="text" id="prod-cat-input" class="search-input" placeholder="Category (e.g. Grocery)">
+        <input type="number" id="prod-price-input" class="search-input" placeholder="Price in ₹">
+        <input type="number" id="prod-stock-input" class="search-input" placeholder="Stock Quantity">
+        <input type="text" id="prod-icon-input" class="search-input" placeholder="Emoji Icon (e.g. 🌾, 🥛, 💊)">
+        <button onclick="addProductSubmit()" class="btn btn-primary">Add Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>👤 Login / Register</h3>
+        <button onclick="closeModal('auth-modal')" class="close-btn">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <p style="font-size:0.85rem; color:var(--gray-600);">Use standard login or 1-Click Quick Demo Login buttons at top banner.</p>
+        <input type="email" id="login-email" class="search-input" placeholder="Email (e.g. customer@town.com)">
+        <input type="password" id="login-pass" class="search-input" placeholder="Password">
+        <button onclick="performLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" class="btn btn-primary">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating Modal -->
+  <div id="rating-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⭐ Rate Shop & Delivery</h3>
+        <button onclick="closeModal('rating-modal')" class="close-btn">&times;</button>
+      </div>
+      <input type="hidden" id="rating-order-id">
+      <input type="hidden" id="rating-shop-id">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <label style="font-size:0.85rem; font-weight:600;">Rating (1 to 5 Stars):</label>
+        <select id="rating-score-select" class="search-input">
+          <option value="5">⭐⭐⭐⭐⭐ (5.0 - Excellent)</option>
+          <option value="4">⭐⭐⭐⭐ (4.0 - Good)</option>
+          <option value="3">⭐⭐⭐ (3.0 - Average)</option>
+          <option value="2">⭐⭐ (2.0 - Poor)</option>
+          <option value="1">⭐ (1.0 - Bad)</option>
+        </select>
+
+        <label style="font-size:0.85rem; font-weight:600;">Review Note:</label>
+        <textarea id="rating-review-text" class="search-input" style="height:80px;" placeholder="Write a short review about the shop and delivery partner..."></textarea>
+
+        <button onclick="submitRating()" class="btn btn-primary">Submit Rating</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

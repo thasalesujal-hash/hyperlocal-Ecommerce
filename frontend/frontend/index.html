@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hyperlocal Commerce & Delivery Platform connecting small town customers with local shopkeepers and delivery partners.">
+  <title>Hyperlocal Connect — Small Town Commerce Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+  TOP DEMO CONTROL BAR
+═══════════════════════════════════════ -->
+<div class="demo-bar">
+  <div class="demo-bar-left">
+    <span class="demo-label">🚀 HACKATHON DEMO</span>
+    <div class="role-pills">
+      <button class="role-pill active" data-role="CUSTOMER">🛒 Customer</button>
+      <button class="role-pill" data-role="SHOPKEEPER">🏪 Shopkeeper</button>
+      <button class="role-pill" data-role="DELIVERY_PARTNER">🚴 Delivery</button>
+      <button class="role-pill" data-role="ADMIN">🛡️ Admin</button>
+    </div>
+  </div>
+  <div class="demo-bar-right">
+    <span class="demo-label">Quick Login:</span>
+    <button class="demo-login-btn" data-email="customer@town.com">Customer</button>
+    <button class="demo-login-btn" data-email="grocer@town.com">Shopkeeper</button>
+    <button class="demo-login-btn" data-email="rider@town.com">Rider</button>
+    <button class="demo-login-btn" data-email="admin@town.com" data-pass="admin123">Admin</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  NAVBAR
+═══════════════════════════════════════ -->
+<nav class="navbar">
+  <a href="#" class="brand">
+    <div class="brand-icon">📍</div>
+    <div class="brand-text">
+      <span class="brand-name">Hyperlocal Connect</span>
+      <span class="brand-tag">Small Towns MVP</span>
+    </div>
+  </a>
+  <div class="nav-center">
+    <div class="location-bar" id="location-btn-inline" onclick="openLocationModal()">
+      <span class="loc-dot"></span>
+      <span id="current-location-text">Town Main Chowk · Near Ganesh Temple</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="icon-btn" title="Toggle Dark Mode">🌙</button>
+    <button id="btn-low-bw" class="icon-btn" title="Low Bandwidth Mode">📶</button>
+    <button onclick="openCartModal()" class="cart-btn">
+      <span>🛒</span>
+      <span>Cart</span>
+      <span class="cart-badge" id="cart-count-badge">0</span>
+    </button>
+    <div id="auth-status-container">
+      <button onclick="openModal('auth-modal')" class="btn btn-primary btn-sm">Login</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+  MAIN CONTENT
+═══════════════════════════════════════ -->
+<main class="main-layout">
+
+<!-- ═══════════════ CUSTOMER VIEW ═══════════════ -->
+<section id="customer-view" class="view-section">
+
+  <!-- Hero Search -->
+  <div class="hero-card">
+    <div class="hero-text">
+      <h1>Find & Order From<br><span class="hero-gradient">Local Shops Near You</span></h1>
+      <p>Fast hyperlocal delivery in your town. Support local businesses.</p>
+    </div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search Rice, Milk, Medicines, Stationery…">
+      </div>
+      <button id="search-btn" class="btn btn-primary">Search</button>
+    </div>
+    <div class="chip-row">
+      <button class="chip active" onclick="filterCategory(event,'ALL')">✨ All</button>
+      <button class="chip" onclick="filterCategory(event,'Grocery')">🌾 Grocery</button>
+      <button class="chip" onclick="filterCategory(event,'Medical')">💊 Medical</button>
+      <button class="chip" onclick="filterCategory(event,'Dairy')">🥛 Dairy</button>
+      <button class="chip" onclick="filterCategory(event,'Stationery')">📚 Stationery</button>
+      <button class="chip" onclick="filterCategory(event,'Vegetables')">🥔 Vegetables</button>
+    </div>
+  </div>
+
+  <!-- Smart Recommendations -->
+  <div id="smart-rec-section" style="display:none; margin-bottom:28px;">
+    <div class="section-header">
+      <h2 class="section-title">💡 Smart Recommendation Engine</h2>
+      <span class="section-sub">Scored by stock · distance · rating · price</span>
+    </div>
+    <div id="smart-rec-results"></div>
+  </div>
+
+  <!-- Town Map -->
+  <div class="panel" style="margin-bottom:28px;">
+    <div class="panel-header">
+      <h2 class="section-title">🗺️ Town Map — Nearby Shops</h2>
+      <span class="section-sub">Click a pin to see products</span>
+    </div>
+    <div id="shops-leaflet-map" class="leaflet-box"></div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="two-col">
+    <!-- Nearby Shops -->
+    <div>
+      <div class="section-header" style="margin-bottom:14px;">
+        <h2 class="section-title">🏪 Nearby Shops</h2>
+      </div>
+      <div id="nearby-shops-grid" class="cards-grid"></div>
+    </div>
+
+    <!-- Popular Products -->
+    <div>
+      <div class="section-header" style="margin-bottom:14px;">
+        <h2 id="popular-products-title" class="section-title">🌾 Essential Products</h2>
+      </div>
+      <div id="popular-products-grid" class="cards-grid"></div>
+    </div>
+  </div>
+
+  <!-- Order Tracker -->
+  <div style="margin-top:28px;">
+    <div class="section-header" style="margin-bottom:14px;">
+      <h2 class="section-title">📦 My Orders & Live Tracking</h2>
+    </div>
+    <div id="customer-orders-list"></div>
+  </div>
+
+</section>
+
+<!-- ═══════════════ SHOPKEEPER VIEW ═══════════════ -->
+<section id="shopkeeper-view" class="view-section" style="display:none;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🏪 Shopkeeper Dashboard</h1>
+      <p class="page-sub">Manage orders, inventory & analytics</p>
+    </div>
+    <button onclick="openModal('add-product-modal')" class="btn btn-primary">+ Add Product</button>
+  </div>
+
+  <!-- Analytics Grid -->
+  <div class="stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">📦</div>
+      <div class="stat-info">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value" id="insight-total-orders">—</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value" id="insight-total-revenue">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demand Trend Banner -->
+  <div class="trend-card" id="insight-demand-trend">📊 Analyzing local demand trends…</div>
+
+  <!-- Low Stock Alerts -->
+  <div class="panel" style="margin-bottom:24px;">
+    <div class="panel-header"><h2 class="section-title">⚠️ Low Stock Alerts</h2></div>
+    <div id="insight-low-stock-list" style="padding:0 20px 20px;"></div>
+  </div>
+
+  <!-- Incoming Orders -->
+  <div style="margin-bottom:24px;">
+    <div class="section-header" style="margin-bottom:14px;">
+      <h2 class="section-title">🔔 Incoming Orders</h2>
+    </div>
+    <div id="shopkeeper-orders-list"></div>
+  </div>
+
+  <!-- Inventory -->
+  <div class="section-header" style="margin-bottom:14px;">
+    <h2 class="section-title">📋 Product Inventory</h2>
+  </div>
+  <div id="shopkeeper-products-list" class="cards-grid"></div>
+
+</section>
+
+<!-- ═══════════════ DELIVERY PARTNER VIEW ═══════════════ -->
+<section id="delivery-view" class="view-section" style="display:none;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🚴 Delivery Partner Hub</h1>
+      <p class="page-sub">Local employment · ₹40 per delivery</p>
+    </div>
+    <div class="duty-toggle">
+      <span class="duty-dot online"></span>
+      <button class="btn btn-accent btn-sm">🟢 Online</button>
+    </div>
+  </div>
+
+  <!-- Earnings Row -->
+  <div class="stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">🚚</div>
+      <div class="stat-info">
+        <div class="stat-label">Deliveries Done</div>
+        <div class="stat-value" id="rider-deliveries-count">0</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">💵</div>
+      <div class="stat-info">
+        <div class="stat-label">Total Earned</div>
+        <div class="stat-value" id="rider-earnings-total">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Route Map -->
+  <div class="panel" style="margin-bottom:24px;">
+    <div class="panel-header">
+      <h2 class="section-title">🗺️ Live Delivery Route Navigation</h2>
+    </div>
+    <div id="route-leaflet-map" class="leaflet-box"></div>
+  </div>
+
+  <!-- Available Requests -->
+  <div style="margin-bottom:24px;">
+    <div class="section-header" style="margin-bottom:14px;">
+      <h2 class="section-title">📍 Available Delivery Requests</h2>
+    </div>
+    <div id="delivery-requests-list"></div>
+  </div>
+
+  <!-- History -->
+  <div class="section-header" style="margin-bottom:14px;">
+    <h2 class="section-title">📜 Delivery History</h2>
+  </div>
+  <div id="delivery-history-list"></div>
+
+</section>
+
+<!-- ═══════════════ ADMIN VIEW ═══════════════ -->
+<section id="admin-view" class="view-section" style="display:none;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🛡️ Admin Control Panel</h1>
+      <p class="page-sub">Platform overview and shop management</p>
+    </div>
+  </div>
+
+  <div class="stats-grid admin-stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">👤</div>
+      <div class="stat-info">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="admin-total-users">—</div>
+      </div>
+    </div>
+    <div class="stat-card stat-purple">
+      <div class="stat-icon">🏪</div>
+      <div class="stat-info">
+        <div class="stat-label">Total Shops</div>
+        <div class="stat-value" id="admin-total-shops">—</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">📦</div>
+      <div class="stat-info">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value" id="admin-total-orders">—</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info">
+        <div class="stat-label">Gross GMV</div>
+        <div class="stat-value" id="admin-total-sales">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="section-title">🏪 Shop Verification</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Shop Name</th>
+            <th>Category</th>
+            <th>Landmark</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="admin-shops-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+</main>
+
+
+<!-- ═══════════════════════════════════════
+  MODALS
+═══════════════════════════════════════ -->
+
+<!-- Location Modal -->
+<div id="location-modal" class="overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📍 Set Your Location</h3>
+      <button class="close-x" onclick="closeModal('location-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <button onclick="useBrowserGPS()" class="btn btn-accent w-full">🛰️ Detect via GPS</button>
+      <div class="divider">— or pick on map / enter landmark —</div>
+      <label class="form-label">Click map to drop pin:</label>
+      <div id="picker-leaflet-map" class="leaflet-box" style="height:180px;"></div>
+      <label class="form-label">Address</label>
+      <input type="text" id="loc-address-input" class="form-input" value="Town Main Market Chowk">
+      <label class="form-label">Landmark</label>
+      <input type="text" id="loc-landmark-input" class="form-input" value="Near Ganesh Temple, opposite City School">
+      <div class="form-row">
+        <div>
+          <label class="form-label">Latitude</label>
+          <input type="number" step="0.0001" id="loc-lat-input" class="form-input" value="18.5204">
+        </div>
+        <div>
+          <label class="form-label">Longitude</label>
+          <input type="number" step="0.0001" id="loc-lng-input" class="form-input" value="73.8567">
+        </div>
+      </div>
+      <button onclick="saveManualLocation()" class="btn btn-primary w-full" style="margin-top:8px;">Save Location</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Modal -->
+<div id="cart-modal" class="overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🛒 Your Cart</h3>
+      <button class="close-x" onclick="closeModal('cart-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cart-items-list" class="cart-list"></div>
+      <div class="cart-total">
+        <span>Total</span>
+        <span class="total-amount">₹<span id="cart-total-price">0</span></span>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Delivery Address</label>
+        <input type="text" id="checkout-address" class="form-input" placeholder="Full address">
+        <label class="form-label">Landmark</label>
+        <input type="text" id="checkout-landmark" class="form-input" placeholder="e.g. Near Ganesh Temple">
+        <label class="form-label">Payment Method</label>
+        <select id="checkout-payment" class="form-input form-select">
+          <option value="COD">💵 Cash on Delivery (COD)</option>
+          <option value="ONLINE_DEMO">💳 Demo UPI / Card Payment</option>
+        </select>
+      </div>
+      <button onclick="placeOrder()" class="btn btn-accent w-full btn-lg">✅ Confirm & Place Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div id="add-product-modal" class="overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📦 Add New Product</h3>
+      <button class="close-x" onclick="closeModal('add-product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">Product Name</label>
+      <input type="text" id="prod-name-input" class="form-input" placeholder="e.g. Sugar 1kg">
+      <label class="form-label">Category</label>
+      <input type="text" id="prod-cat-input" class="form-input" placeholder="e.g. Grocery">
+      <div class="form-row">
+        <div>
+          <label class="form-label">Price (₹)</label>
+          <input type="number" id="prod-price-input" class="form-input" placeholder="0.00">
+        </div>
+        <div>
+          <label class="form-label">Stock Units</label>
+          <input type="number" id="prod-stock-input" class="form-input" placeholder="10">
+        </div>
+      </div>
+      <label class="form-label">Emoji Icon</label>
+      <input type="text" id="prod-icon-input" class="form-input" placeholder="🌾 🥛 💊 📓">
+      <button onclick="addProductSubmit()" class="btn btn-primary w-full" style="margin-top:8px;">Add to Inventory</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div id="auth-modal" class="overlay" style="display:none;">
+  <div class="modal-box modal-sm">
+    <div class="modal-head">
+      <h3>👤 Login</h3>
+      <button class="close-x" onclick="closeModal('auth-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-hint">Or use Quick Demo Login buttons at the top bar</p>
+      <label class="form-label">Email</label>
+      <input type="email" id="login-email" class="form-input" placeholder="customer@town.com">
+      <label class="form-label">Password</label>
+      <input type="password" id="login-pass" class="form-input" placeholder="password123">
+      <button onclick="performLogin(document.getElementById('login-email').value, document.getElementById('login-pass').value)" class="btn btn-primary w-full" style="margin-top:10px;">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Modal -->
+<div id="rating-modal" class="overlay" style="display:none;">
+  <div class="modal-box modal-sm">
+    <div class="modal-head">
+      <h3>⭐ Rate Your Order</h3>
+      <button class="close-x" onclick="closeModal('rating-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rating-order-id">
+      <input type="hidden" id="rating-shop-id">
+      <label class="form-label">Star Rating</label>
+      <select id="rating-score-select" class="form-input form-select">
+        <option value="5">⭐⭐⭐⭐⭐ Excellent (5.0)</option>
+        <option value="4">⭐⭐⭐⭐ Good (4.0)</option>
+        <option value="3">⭐⭐⭐ Average (3.0)</option>
+        <option value="2">⭐⭐ Poor (2.0)</option>
+        <option value="1">⭐ Bad (1.0)</option>
+      </select>
+      <label class="form-label">Write a Review</label>
+      <textarea id="rating-review-text" class="form-input" rows="3" placeholder="Share your experience…"></textarea>
+      <button onclick="submitRating()" class="btn btn-primary w-full" style="margin-top:10px;">Submit Rating</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
